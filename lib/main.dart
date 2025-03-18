@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:smart_dry/features/splash/screen/splash_screen.dart';
 import 'package:smart_dry/routes/routes.dart';
 
@@ -11,12 +12,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-  debugShowCheckedModeBanner: false,
-  theme: ThemeData(
-    primarySwatch: Colors.blue,
-  ),
-  routerConfig: router, 
-);
+    return GetMaterialApp.router(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      routerDelegate: router.routerDelegate,
+      routeInformationParser: router.routeInformationParser,
+      routeInformationProvider: router.routeInformationProvider,
+    );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:smart_dry/common/assets/images/NetworImageAssets.dart';
 import 'package:smart_dry/core/theme/AppColor.dart';
 
@@ -32,34 +33,39 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
           ),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.4),
+            ),
+          ),
           Positioned(
-            top: screenHeight / 4,
-            left: screenWidth / 8,
+            top: screenHeight / 6,
+            left: screenWidth / 9,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   "Welcome",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 40,
-                    fontWeight: FontWeight.w300,
-                  ),
-                ),
-                Text(
-                  "to Your",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 40,
-                    fontWeight: FontWeight.w300,
-                  ),
-                ),
-                Text(
-                  "Smart Dry",
-                  style: TextStyle(
+                  style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontSize: 40,
                     fontWeight: FontWeight.w400,
+                  ),
+                ),
+                Text(
+                  "To Your",
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 40,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                Text(
+                  "Smart Dry Box",
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 40,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -76,13 +82,13 @@ class _SplashScreenState extends State<SplashScreen> {
                 width: screenWidth / 2,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 92, 35, 15),
+                    backgroundColor: Appcolor.splashColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
                   onPressed: () {
-                    context.go("/auth");
+                    context.go("/home");
                   },
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -96,7 +102,7 @@ class _SplashScreenState extends State<SplashScreen> {
                         ),
                       ),
                       SizedBox(
-                        width: 20,
+                        width: 10,
                       ),
                       Expanded(
                         child: Icon(
