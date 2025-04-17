@@ -22,8 +22,9 @@ class _ThermostatScreenState extends State<ThermostatScreen>
 
   final List<Map<String, dynamic>> modes = [
     {'icon': Icons.auto_mode, 'name': 'Auto', 'isSelected': true},
-    {'icon': Icons.wb_sunny, 'name': 'Heat', 'isSelected': false},
-    {'icon': Icons.water_drop, 'name': 'Dry', 'isSelected': false},
+    {'icon': Icons.man, 'name': 'Manual', 'isSelected': false},
+    {'icon': Icons.water_drop, 'name': "Humadity", 'isSelected': false},
+    {'icon': Icons.settings, 'name': 'Setting', 'isSelected': false},
   ];
 
   @override
@@ -296,7 +297,7 @@ class _ThermostatScreenState extends State<ThermostatScreen>
           ),
 
           SizedBox(
-            width: 10,
+            width: 110,
           ),
           Expanded(
             child: Transform.scale(
