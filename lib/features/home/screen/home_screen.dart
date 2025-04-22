@@ -1,8 +1,9 @@
 import 'package:day_night_switch/day_night_switch.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:smart_dry/core/theme/AppColor.dart';
-
-import 'dart:math';
 
 class ThermostatScreen extends StatefulWidget {
   const ThermostatScreen({Key? key}) : super(key: key);
@@ -57,9 +58,15 @@ class _ThermostatScreenState extends State<ThermostatScreen>
       body: Column(
         children: [
           _buildTopCard(),
-          _buildPowerToggle(),
+          _buildPowerToggle(
+            title: "Power Mode",
+            icon: Icons.shield,
+            padding: 130,
+          ),
+          _buildPowerToggle(title: "Pemanas Mode", icon: Icons.hot_tub),
           _buildTemperatureControl(),
           const SizedBox(height: 20),
+          _buildMenu(),
           _buildModeSelection(),
           const SizedBox(height: 30),
         ],
@@ -86,7 +93,9 @@ class _ThermostatScreenState extends State<ThermostatScreen>
             color: Colors.black,
             size: 24,
           ),
-          onPressed: () {},
+          onPressed: () {
+            context.go("/notifikasi");
+          },
         ),
         SizedBox(
           width: 10,
@@ -235,19 +244,20 @@ class _ThermostatScreenState extends State<ThermostatScreen>
                         ],
                       ),
                       Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            // color: Colors.white.withOpacity(0.2),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            isPowerOn ? Icons.nightlight_round : Icons.sunny,
-                            size: 80,
-                            color: isPowerOn
-                                ? Appcolor.moonColor
-                                : Appcolor.sunColor,
-                          )),
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          // color: Colors.white.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          isPowerOn ? CupertinoIcons.cloud_rain : Icons.sunny,
+                          size: 80,
+                          color: isPowerOn
+                              ? Appcolor.moonColor
+                              : Appcolor.sunColor,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -259,10 +269,10 @@ class _ThermostatScreenState extends State<ThermostatScreen>
     );
   }
 
-  Widget _buildPowerToggle() {
+  Widget _buildPowerToggle({String? title, IconData? icon, double? padding}) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(15),
@@ -281,13 +291,13 @@ class _ThermostatScreenState extends State<ThermostatScreen>
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               Icon(
-                Icons.shield,
+                icon,
                 color: isPowerOn ? Appcolor.splashColor : Appcolor.different,
                 size: 22,
               ),
               const SizedBox(width: 10),
-              const Text(
-                'Protect Mode',
+              Text(
+                '${title}',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
@@ -295,9 +305,8 @@ class _ThermostatScreenState extends State<ThermostatScreen>
               ),
             ],
           ),
-
           SizedBox(
-            width: 110,
+            width: padding ?? 110,
           ),
           Expanded(
             child: Transform.scale(
@@ -313,7 +322,7 @@ class _ThermostatScreenState extends State<ThermostatScreen>
                 },
               ),
             ),
-          )
+          ),
           // Switch(
           //   value: isPowerOn,
           //   onChanged: (value) {
@@ -537,6 +546,17 @@ class _ThermostatScreenState extends State<ThermostatScreen>
         setState(() {
           selectedModeIndex = index;
         });
+        // Handle mode selection logic here
+        // For example, you can update the current temperature based on the mode
+        if (mode['name'] == 'Auto') {
+          currentTemperature = 24; // Set to default auto temperature
+        } else if (mode['name'] == 'Manual') {
+          currentTemperature = 26; // Set to manual temperature
+        } else if (mode['name'] == 'Humadity') {
+          context.go("/kadar_air");
+        } else if (mode['name'] == 'Setting') {
+          context.go("/setting");
+        }
       },
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

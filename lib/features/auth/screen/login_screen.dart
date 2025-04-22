@@ -1,57 +1,164 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:go_router/go_router.dart';
-import 'package:smart_dry/features/auth/controller/LoginController.dart';
-import 'package:smart_dry/routes/routes.dart';
+
+import 'package:smart_dry/core/theme/AppColor.dart';
+import 'package:smart_dry/features/auth/controller/AuthController.dart';
+import 'package:smart_dry/features/auth/model/user_model.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(Logincontroller());
+    final controller = Authcontroller();
     final emailController = TextEditingController();
     final passwordController = TextEditingController();
+
     return Scaffold(
+      backgroundColor: Appcolor.primaryColor,
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
-            ),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Password'),
-            ),
-            const SizedBox(height: 20),
-            Obx(
-              () => controller.isLoading.value
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: () async {
-                        controller.login(
-                          emailController.text,
-                          passwordController.text,
-                        );
-                      },
-                      child: const Text('Login'),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 20),
+              Text(
+                'Welcome Back',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Appcolor.splashColor,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Sign in to continue',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Appcolor.different,
+                ),
+              ),
+              const SizedBox(height: 50),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Appcolor.different.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
                     ),
-            ),
-            TextButton(
-              onPressed: () => context.go('/register'),
-              child: const Text('Don\'t have an account? Register'),
-            ),
-          ],
+                  ],
+                ),
+                child: TextField(
+                  controller: emailController,
+                  decoration: InputDecoration(
+                    labelText: 'Username',
+                    labelStyle: TextStyle(color: Appcolor.different),
+                    prefixIcon: Icon(Icons.person_2_outlined,
+                        color: Appcolor.splashColor),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 16),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Appcolor.splashColor),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.transparent),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Appcolor.different.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    labelStyle: TextStyle(color: Appcolor.different),
+                    prefixIcon:
+                        Icon(Icons.lock_outline, color: Appcolor.splashColor),
+                    suffixIcon:
+                        Icon(Icons.visibility_off, color: Appcolor.different),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 16),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Appcolor.splashColor),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.transparent),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {},
+                  child: Text(
+                    'Forgot Password?',
+                    style: TextStyle(
+                      color: Appcolor.splashColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: MediaQuery.of(context).size.height / 20),
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: ElevatedButton(
+                  onPressed: () {
+                    controller.login(
+                      UserModel(
+                        email: emailController.text,
+                        password: passwordController.text,
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Appcolor.splashColor,
+                    foregroundColor: Colors.white,
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Sign In',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

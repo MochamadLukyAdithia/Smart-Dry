@@ -8,5 +8,4 @@ class Appcolor {
   static final Color moonColor = const Color(0xFFf5f3ce);
   static final Color dayColor = const Color(0xFF87CEEB);
   static final Color nightColor = const Color(0xFF003366);
-
 }

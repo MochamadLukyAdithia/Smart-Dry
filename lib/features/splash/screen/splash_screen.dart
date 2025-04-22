@@ -1,21 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:smart_dry/common/assets/images/LocalImageAssets.dart';
 import 'package:smart_dry/common/assets/images/NetworImageAssets.dart';
 import 'package:smart_dry/core/theme/AppColor.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
-
-  @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,8 +19,10 @@ class _SplashScreenState extends State<SplashScreen> {
           Container(
             decoration: BoxDecoration(
               image: DecorationImage(
-                image: NetworkImage(NetworkimageAssets.splashScreen),
-                fit: BoxFit.fill,
+                image: AssetImage(
+                  Localimageassets.splash,
+                ),
+                fit: BoxFit.cover,
               ),
             ),
           ),
@@ -88,7 +81,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     ),
                   ),
                   onPressed: () {
-                    context.go("/home");
+                    context.go("/login");
                   },
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
