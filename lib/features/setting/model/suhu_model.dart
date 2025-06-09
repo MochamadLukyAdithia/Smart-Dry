@@ -15,7 +15,7 @@ class SuhuModel {
       id_suhu: json['id_suhu'] as int?,
       id_user: json['id_user'] as int?,
       batasan_suhu: json['batasan_suhu'] as int?,
-      current_temperature: json['current_temperature'] as int?,
+      current_temperature: json['current_temperatur'] as int?,
     );
   }
   Map<String, dynamic> toJson() {
@@ -23,7 +23,7 @@ class SuhuModel {
       'id_suhu': id_suhu,
       'id_user': id_user,
       'batasan_suhu': batasan_suhu,
-      'current_temperature': current_temperature,
+      'current_temperatur': current_temperature,
     };
   }
 }

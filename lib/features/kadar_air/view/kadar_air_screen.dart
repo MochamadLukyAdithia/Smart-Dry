@@ -5,22 +5,39 @@ import 'package:smart_dry/features/kadar_air/model/kadarair_model.dart';
 
 class KadarAirScreen extends StatefulWidget {
   KadarAirScreen({super.key});
-
   @override
   State<KadarAirScreen> createState() => _KadarAirScreenState();
 }
 
 class _KadarAirScreenState extends State<KadarAirScreen> {
-  final controller = Kadaraircontroller();
   bool isSystemActive = false;
-  double currentMoisture = 65.5; // Example value - replace with real data
+  double? currentMoisture = 0.0;
 
-  void toggleSystem() {
-    setState(() {
-      isSystemActive = !isSystemActive;
-    });
-    // Implement your system activation logic here
-    // controller.toggleSystem(isSystemActive);
+  void toggleSystem() async {
+    final moisture = currentMoisture ?? 0.0;
+    KadarairModel? data = await Kadaraircontroller.getDataKadarAir();
+    if (data != null) {
+      setState(() {
+        currentMoisture = data.kadar_air!.toDouble();
+        isSystemActive = data.status_kadar_air!;
+      });
+    }
+  }
+
+  Future<void> fetchMoistureData() async {
+    KadarairModel? data = await Kadaraircontroller.getDataKadarAir();
+    if (data != null) {
+      setState(() {
+        currentMoisture = data.kadar_air!.toDouble();
+        isSystemActive = data.status_kadar_air!;
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    fetchMoistureData();
+    super.initState();
   }
 
   @override
@@ -49,8 +66,6 @@ class _KadarAirScreenState extends State<KadarAirScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(height: 24),
-
-              // Simple moisture card
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.all(24),
@@ -69,7 +84,7 @@ class _KadarAirScreenState extends State<KadarAirScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Kadar Air Saat Ini",
+                      "Kadar Air",
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[600],
@@ -80,7 +95,7 @@ class _KadarAirScreenState extends State<KadarAirScreen> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          "${currentMoisture.toStringAsFixed(1)}",
+                          "${currentMoisture!.toStringAsFixed(1)}",
                           style: TextStyle(
                             fontSize: 48,
                             fontWeight: FontWeight.bold,
@@ -101,8 +116,6 @@ class _KadarAirScreenState extends State<KadarAirScreen> {
                       ],
                     ),
                     SizedBox(height: 24),
-
-                    // Progress indicator
                     Stack(
                       children: [
                         Container(
@@ -115,11 +128,11 @@ class _KadarAirScreenState extends State<KadarAirScreen> {
                         ),
                         Container(
                           height: 8,
-                          width: MediaQuery.of(context).size.width *
-                                  (currentMoisture / 100) -
-                              40,
+                          width:
+                              MediaQuery.of(context).size.width * (65 / 100) -
+                                  40,
                           decoration: BoxDecoration(
-                            color: _getMoistureColor(currentMoisture),
+                            color: _getMoistureColor(currentMoisture!),
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
@@ -130,30 +143,10 @@ class _KadarAirScreenState extends State<KadarAirScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          _getMoistureStatus(currentMoisture),
+                          _getMoistureStatus(currentMoisture!),
                           style: TextStyle(
-                            color: _getMoistureColor(currentMoisture),
+                            color: _getMoistureColor(currentMoisture!),
                             fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Container(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: isSystemActive
-                                ? Appcolor.splashColor.withOpacity(0.1)
-                                : Colors.grey[200],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            isSystemActive ? "Aktif" : "Nonaktif",
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isSystemActive
-                                  ? Appcolor.splashColor
-                                  : Colors.grey[600],
-                              fontWeight: FontWeight.w500,
-                            ),
                           ),
                         ),
                       ],
@@ -161,19 +154,14 @@ class _KadarAirScreenState extends State<KadarAirScreen> {
                   ],
                 ),
               ),
-
               SizedBox(height: 24),
-
-              // Activation button
               SizedBox(
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
                   onPressed: toggleSystem,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isSystemActive
-                        ? Colors.redAccent.withOpacity(0.9)
-                        : Appcolor.splashColor,
+                    backgroundColor: Appcolor.splashColor,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
@@ -181,7 +169,7 @@ class _KadarAirScreenState extends State<KadarAirScreen> {
                     ),
                   ),
                   child: Text(
-                    isSystemActive ? "Matikan Sistem" : "Aktifkan Sistem",
+                    "Melihat Kadar Air",
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
@@ -203,9 +191,11 @@ class _KadarAirScreenState extends State<KadarAirScreen> {
   }
 
   String _getMoistureStatus(double value) {
-    if (value > 70) return "Tinggi";
-    if (value > 40) return "Normal";
-    return "Rendah";
+    if (value > 40) return "Masih Basah";
+    if (value >= 20 && value <= 40) return "Sedang Luamayan Kering";
+    if (value > 14 && value < 20) return "Sudah Kering";
+    if (value <= 14) return "Sangat Kering";
+    return "Tidak Terdeteksi";
   }
 }
 

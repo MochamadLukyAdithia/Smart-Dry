@@ -40,7 +40,7 @@ dependencies:
   google_fonts: ^6.2.1
   day_night_switch: ^1.0.4
   device_preview: ^1.2.0
-  supabase_flutter: ^2.8.4
+  supabase_flutter: ^2.9.0
   material_symbols_icons: ^4.2815.0
 
 dev_dependencies:

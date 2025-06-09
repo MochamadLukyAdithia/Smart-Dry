@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:smart_dry/core/theme/AppColor.dart';
+import 'package:smart_dry/features/auth/controller/AuthController.dart';
+import 'package:smart_dry/features/setting/controller/SettingController.dart';
 
 class SettingScreen extends StatefulWidget {
   final double batasanSuhu;
@@ -12,6 +14,7 @@ class SettingScreen extends StatefulWidget {
 
 class _SettingScreenState extends State<SettingScreen> {
   late double currentTemperature;
+  double? currentTemperatureLimit;
   bool isDarkMode = false;
   bool notifications = true;
 
@@ -19,6 +22,14 @@ class _SettingScreenState extends State<SettingScreen> {
   void initState() {
     super.initState();
     currentTemperature = widget.batasanSuhu;
+    getBatasanSuhu();
+  }
+
+  Future<void> getBatasanSuhu() async {
+    final resp = await SettingController.getBatasanSuhu();
+    setState(() {
+      currentTemperatureLimit = resp.batasan_suhu?.toDouble() ?? 100.0;
+    });
   }
 
   void _logout() {
@@ -56,9 +67,24 @@ class _SettingScreenState extends State<SettingScreen> {
                 ),
               ),
               child: const Text('Log Out'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                context.go('/login');
+              onPressed: () async {
+                final resp = await AuthController.logout();
+                if (resp) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Logged out successfully'),
+                      backgroundColor: Appcolor.splashColor,
+                    ),
+                  );
+                  context.go('/login');
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Failed to log out'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               },
             ),
           ],
@@ -90,6 +116,24 @@ class _SettingScreenState extends State<SettingScreen> {
             context.go('/home');
           },
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh, color: Appcolor.splashColor),
+            tooltip: 'Refresh',
+            onPressed: () async {
+              await getBatasanSuhu();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Temperature limit refreshed'),
+                  backgroundColor: Appcolor.splashColor,
+                ),
+              );
+            },
+          ),
+          SizedBox(
+            width: 20,
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
@@ -98,7 +142,6 @@ class _SettingScreenState extends State<SettingScreen> {
           children: [
             const SizedBox(height: 30),
 
-            // Temperature Control Section
             Text(
               'Temperature Settings',
               style: TextStyle(
@@ -122,13 +165,13 @@ class _SettingScreenState extends State<SettingScreen> {
               ),
               padding: const EdgeInsets.all(20),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Current Temperature Limit',
+                        'Batasan Suhu',
                         style: TextStyle(
                           fontSize: 16,
                           color: Appcolor.different,
@@ -143,7 +186,7 @@ class _SettingScreenState extends State<SettingScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          '${currentTemperature.toStringAsFixed(1)}°C',
+                          '${currentTemperatureLimit}°C',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
@@ -153,7 +196,24 @@ class _SettingScreenState extends State<SettingScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 40),
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(horizontal: 100, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Appcolor.splashColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${currentTemperature.toStringAsFixed(0)}°C',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Appcolor.splashColor,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 20),
                   Row(
                     children: [
                       Icon(Icons.ac_unit, color: Appcolor.dayColor),
@@ -188,12 +248,13 @@ class _SettingScreenState extends State<SettingScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      onPressed: () {
-                        // Save temperature logic here
+                      onPressed: () async {
+                        await SettingController.updateBatasanSuhu(
+                            currentTemperature.toInt());
+
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(
-                                'Temperature limit updated to ${currentTemperature.toStringAsFixed(1)}°C'),
+                            content: Text('Temperature setting saved'),
                             backgroundColor: Appcolor.splashColor,
                           ),
                         );
@@ -210,7 +271,6 @@ class _SettingScreenState extends State<SettingScreen> {
 
             const SizedBox(height: 30),
 
-            // App Settings Section
             Text(
               'App Settings',
               style: TextStyle(
@@ -234,49 +294,7 @@ class _SettingScreenState extends State<SettingScreen> {
               ),
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Column(
-                children: [
-                  SwitchListTile(
-                    title: Text(
-                      'Dark Mode',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Appcolor.different,
-                      ),
-                    ),
-                    value: isDarkMode,
-                    activeColor: Appcolor.splashColor,
-                    onChanged: (bool value) {
-                      setState(() {
-                        isDarkMode = value;
-                      });
-                    },
-                    secondary: Icon(
-                      Icons.dark_mode,
-                      color: Appcolor.splashColor,
-                    ),
-                  ),
-                  Divider(color: Appcolor.different.withOpacity(0.1)),
-                  Divider(color: Appcolor.different.withOpacity(0.1)),
-                  ListTile(
-                    leading: Icon(
-                      Icons.info_outline,
-                      color: Appcolor.splashColor,
-                    ),
-                    title: Text(
-                      'About App',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Appcolor.different,
-                      ),
-                    ),
-                    trailing: Icon(
-                      Icons.arrow_forward_ios,
-                      size: 16,
-                      color: Appcolor.different,
-                    ),
-                    onTap: () {},
-                  ),
-                ],
+                children: [],
               ),
             ),
 

@@ -2,11 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:smart_dry/common/assets/images/LocalImageAssets.dart';
-import 'package:smart_dry/common/assets/images/NetworImageAssets.dart';
 import 'package:smart_dry/core/theme/AppColor.dart';
 
-class SplashScreen extends StatelessWidget {
+class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Delay 3 detik, lalu masuk ke login
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        context.go("/login");
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,17 +34,13 @@ class SplashScreen extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               image: DecorationImage(
-                image: AssetImage(
-                  Localimageassets.splash,
-                ),
+                image: AssetImage(Localimageassets.splash),
                 fit: BoxFit.cover,
               ),
             ),
           ),
           Container(
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.4),
-            ),
+            color: Colors.black.withOpacity(0.4),
           ),
           Positioned(
             top: screenHeight / 6,
@@ -62,53 +73,6 @@ class SplashScreen extends StatelessWidget {
                   ),
                 ),
               ],
-            ),
-          ),
-          Container(
-            margin: EdgeInsets.only(
-              bottom: screenWidth / 6,
-            ),
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: Container(
-                height: screenWidth / 8,
-                width: screenWidth / 2,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Appcolor.splashColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
-                  onPressed: () {
-                    context.go("/login");
-                  },
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Text(
-                        "Get Started",
-                        style: TextStyle(
-                          color: Appcolor.primaryColor,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      SizedBox(
-                        width: 10,
-                      ),
-                      Expanded(
-                        child: Icon(
-                          Icons.arrow_forward,
-                          color: Appcolor.primaryColor,
-                          size: 30,
-                          weight: 0.6,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
             ),
           ),
         ],

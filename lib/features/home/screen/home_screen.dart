@@ -2,8 +2,10 @@ import 'package:day_night_switch/day_night_switch.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:smart_dry/core/theme/AppColor.dart';
+import 'package:smart_dry/features/home/controller/HomeController.dart';
+import 'package:smart_dry/features/setting/controller/SettingController.dart';
+import 'package:smart_dry/features/setting/model/suhu_model.dart';
 
 class ThermostatScreen extends StatefulWidget {
   const ThermostatScreen({Key? key}) : super(key: key);
@@ -14,23 +16,84 @@ class ThermostatScreen extends StatefulWidget {
 
 class _ThermostatScreenState extends State<ThermostatScreen>
     with SingleTickerProviderStateMixin {
-  bool isPowerOn = true;
-  int selectedRoomIndex = 0;
-  int selectedModeIndex = 0;
-  double currentTemperature = 24;
+  bool isProtectMode = false;
+  bool isHeaterMode = false;
+  bool isFan = false;
+  int selectedModeIndex = 0; // This will be the single source of truth
+  bool fanStaus = false;
+  int? currentTemperatur;
+  int? batasanSuhu;
+
+  // List of modes
+  final List<Map<String, dynamic>> modes = [
+    {'icon': Icons.auto_mode, 'name': 'Auto', 'value': 'auto'},
+    {'icon': Icons.man, 'name': 'Manual', 'value': 'manual'},
+    {'icon': Icons.water_drop, 'name': "Humadity", 'value': 'humidity'},
+    {'icon': Icons.settings, 'name': 'Setting', 'value': 'setting'},
+  ];
+
+  // Get current mode based on selectedModeIndex
+  String get currentMode => modes[selectedModeIndex]['value'];
+
+  // Check if current mode is auto
+  bool get isAutoMode => currentMode == "auto";
+
   late AnimationController _animationController;
   late Animation<double> _animation;
 
-  final List<Map<String, dynamic>> modes = [
-    {'icon': Icons.auto_mode, 'name': 'Auto', 'isSelected': true},
-    {'icon': Icons.man, 'name': 'Manual', 'isSelected': false},
-    {'icon': Icons.water_drop, 'name': "Humadity", 'isSelected': false},
-    {'icon': Icons.settings, 'name': 'Setting', 'isSelected': false},
-  ];
+  Future<void> getBatasanSuhu() async {
+    final resp = await SettingController.getBatasanSuhu();
+    setState(() {
+      currentTemperatur = resp.current_temperature ?? 0;
+      batasanSuhu = resp.batasan_suhu ?? 0;
+
+      if (currentTemperatur == null) {
+        currentTemperatur = 0;
+      }
+    });
+
+    // Update fan status in database based on temperature comparison
+    await updateFanStatus();
+
+    // Then get the updated fan status from database
+    await getFanStatus();
+  }
+
+  Future<void> updateFanStatus() async {
+    if (currentTemperatur != null && batasanSuhu != null) {
+      bool shouldFanBeOn = currentTemperatur! > batasanSuhu!;
+      // Update fan status to database
+      await Homecontroller.updateFanStatus(shouldFanBeOn);
+    }
+    if (isHeaterMode == false) {
+      // If heater mode is off, ensure fan is also off
+      await Homecontroller.updateFanStatus(false);
+      setState(() {
+        isFan = false;
+      });
+    } else {
+      // If heater mode is on, update fan status based on temperature
+      setState(() {
+        isFan = currentTemperatur! > batasanSuhu!;
+      });
+    }
+  }
+
+  Future<void> getFanStatus() async {
+    // Get current fan status from database
+    final fanStatus = await Homecontroller.getFanStatus();
+    setState(() {
+      isFan = fanStatus ?? false;
+    });
+  }
 
   @override
   void initState() {
     super.initState();
+    getBatasanSuhu();
+    // Initialize with auto mode
+    selectedModeIndex = 0;
+    Homecontroller.updateModePengeringan("auto");
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
@@ -59,19 +122,161 @@ class _ThermostatScreenState extends State<ThermostatScreen>
         children: [
           _buildTopCard(),
           _buildPowerToggle(
-            title: "Power Mode",
+            title: "Protect ",
             icon: Icons.shield,
-            padding: 130,
+            padding: 155,
+            status: isProtectMode,
+            onChanged: (value) {
+              if (isAutoMode) {
+                _showAutoModeDialog();
+                return;
+              }
+              setState(() {
+                isProtectMode = value;
+                // Update protect mode controller
+                Homecontroller.updateProtectMode(value);
+              });
+            },
           ),
-          _buildPowerToggle(title: "Pemanas Mode", icon: Icons.hot_tub),
+          _buildPowerToggle(
+            title: "Pemanas ",
+            icon: Icons.hot_tub,
+            padding: 140,
+            status: isHeaterMode,
+            onChanged: (value) {
+              if (isAutoMode) {
+                _showAutoModeDialog();
+                return;
+              }
+              setState(() {
+                isHeaterMode = value;
+                // Update heater mode controller
+                Homecontroller.updateHeaterMode(value);
+              });
+            },
+          ),
+          const SizedBox(height: 15),
           _buildTemperatureControl(),
-          const SizedBox(height: 20),
+          const SizedBox(height: 5),
           _buildMenu(),
           _buildModeSelection(),
           const SizedBox(height: 30),
         ],
       ),
     );
+  }
+
+  void _showAutoModeDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                color: Appcolor.splashColor,
+                size: 24,
+              ),
+              SizedBox(width: 10),
+              Text(
+                'Mode Auto Aktif',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Anda sedang dalam mode Auto. Sistem akan mengatur pemanas dan protect secara otomatis berdasarkan kondisi suhu dan kelembaban.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black54,
+                  height: 1.4,
+                ),
+              ),
+              SizedBox(height: 15),
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Appcolor.splashColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.lightbulb_outline,
+                      color: Appcolor.splashColor,
+                      size: 20,
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Ubah ke mode Manual untuk mengontrol secara custom',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Appcolor.splashColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                'Tetap Auto',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _switchToManualMode();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Appcolor.splashColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: Text(
+                'Ubah ke Manual',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _switchToManualMode() {
+    setState(() {
+      selectedModeIndex = 1; // Manual mode index
+    });
+    Homecontroller.updateModePengeringan("manual");
   }
 
   AppBar _buildAppBar() {
@@ -122,9 +327,14 @@ class _ThermostatScreenState extends State<ThermostatScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              isPowerOn ? Appcolor.splashColor : Appcolor.different,
-              isPowerOn ? Appcolor.splashColor : Appcolor.different,
-              isPowerOn
+              // Use combined status for gradient color
+              (isProtectMode || isHeaterMode)
+                  ? Appcolor.splashColor
+                  : Appcolor.different,
+              (isProtectMode || isHeaterMode)
+                  ? Appcolor.splashColor
+                  : Appcolor.different,
+              (isProtectMode || isHeaterMode)
                   ? Appcolor.splashColor.withOpacity(0.8)
                   : Appcolor.different.withOpacity(0.8),
             ],
@@ -139,7 +349,6 @@ class _ThermostatScreenState extends State<ThermostatScreen>
         ),
         child: Stack(
           children: [
-            // Decorative elements
             Positioned(
               top: -20,
               right: -20,
@@ -171,7 +380,7 @@ class _ThermostatScreenState extends State<ThermostatScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     "Smart Dry Box Status",
                     style: TextStyle(
                       color: Colors.white,
@@ -179,7 +388,7 @@ class _ThermostatScreenState extends State<ThermostatScreen>
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -189,15 +398,19 @@ class _ThermostatScreenState extends State<ThermostatScreen>
                           Row(
                             children: [
                               Icon(
-                                isPowerOn ? Icons.check_circle : Icons.error,
-                                color: isPowerOn
+                                (isProtectMode || isHeaterMode)
+                                    ? Icons.check_circle
+                                    : Icons.error,
+                                color: (isProtectMode || isHeaterMode)
                                     ? Colors.greenAccent
                                     : Colors.redAccent,
                                 size: 18,
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                isPowerOn ? "Active" : "Inactive",
+                                (isProtectMode || isHeaterMode)
+                                    ? "Active"
+                                    : "Inactive",
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,
@@ -208,14 +421,14 @@ class _ThermostatScreenState extends State<ThermostatScreen>
                           const SizedBox(height: 12),
                           Row(
                             children: [
-                              const Icon(
-                                Icons.thermostat,
-                                color: Colors.white70,
+                              Icon(
+                                isFan ? Icons.wind_power : Icons.mode_fan_off,
+                                color: isFan ? Colors.green : Colors.red,
                                 size: 18,
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                "Current: ${currentTemperature.toStringAsFixed(1)}°C",
+                                "Fan : ${isFan ? "On" : "Off"}",
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,
@@ -247,16 +460,9 @@ class _ThermostatScreenState extends State<ThermostatScreen>
                         width: 80,
                         height: 80,
                         decoration: BoxDecoration(
-                          // color: Colors.white.withOpacity(0.2),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(
-                          isPowerOn ? CupertinoIcons.cloud_rain : Icons.sunny,
-                          size: 80,
-                          color: isPowerOn
-                              ? Appcolor.moonColor
-                              : Appcolor.sunColor,
-                        ),
+                        child: _buildStatusIcon(),
                       ),
                     ],
                   ),
@@ -269,7 +475,45 @@ class _ThermostatScreenState extends State<ThermostatScreen>
     );
   }
 
-  Widget _buildPowerToggle({String? title, IconData? icon, double? padding}) {
+  Widget _buildStatusIcon() {
+    if (isProtectMode && isHeaterMode) {
+      // Both modes active - show combined icon or priority icon
+      return Icon(
+        Icons.security,
+        size: 80,
+        color: Appcolor.sunColor,
+      );
+    } else if (isProtectMode) {
+      // Only protect mode active
+      return Icon(
+        Icons.shield,
+        size: 80,
+        color: Appcolor.splashColor,
+      );
+    } else if (isHeaterMode) {
+      // Only heater mode active
+      return Icon(
+        Icons.local_fire_department,
+        size: 80,
+        color: Appcolor.sunColor,
+      );
+    } else {
+      // Both modes inactive
+      return Icon(
+        Icons.power_off,
+        size: 80,
+        color: Colors.grey,
+      );
+    }
+  }
+
+  Widget _buildPowerToggle({
+    String? title,
+    IconData? icon,
+    double? padding,
+    bool status = false,
+    required Function(bool) onChanged,
+  }) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
@@ -292,7 +536,9 @@ class _ThermostatScreenState extends State<ThermostatScreen>
             children: [
               Icon(
                 icon,
-                color: isPowerOn ? Appcolor.splashColor : Appcolor.different,
+                color: status
+                    ? Appcolor.splashColor
+                    : (isAutoMode ? Colors.grey : Appcolor.different),
                 size: 22,
               ),
               const SizedBox(width: 10),
@@ -301,6 +547,7 @@ class _ThermostatScreenState extends State<ThermostatScreen>
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
+                  color: isAutoMode ? Colors.grey : Colors.black,
                 ),
               ),
             ],
@@ -309,206 +556,147 @@ class _ThermostatScreenState extends State<ThermostatScreen>
             width: padding ?? 110,
           ),
           Expanded(
-            child: Transform.scale(
-              scale: 0.4,
-              child: DayNightSwitch(
-                dayColor: Appcolor.different,
-                nightColor: Appcolor.splashColor,
-                value: isPowerOn,
-                onChanged: (value) {
-                  setState(() {
-                    isPowerOn = value;
-                  });
-                },
+            child: GestureDetector(
+              onTap: () {
+                // Handle tap based on mode
+                if (isAutoMode) {
+                  _showAutoModeDialog();
+                } else {
+                  onChanged(!status);
+                }
+              },
+              child: Transform.scale(
+                scale: 0.4,
+                child: DayNightSwitch(
+                  dayColor:
+                      isAutoMode ? Colors.grey.shade300 : Appcolor.different,
+                  nightColor:
+                      isAutoMode ? Colors.grey.shade400 : Appcolor.splashColor,
+                  value: status,
+                  onChanged: isAutoMode ? null : onChanged,
+                ),
               ),
             ),
           ),
-          // Switch(
-          //   value: isPowerOn,
-          //   onChanged: (value) {
-          //     setState(() {
-          //       isPowerOn = value;
-          //     });
-          //   },
-          //   activeColor: Colors.blue,
-          // ),
         ],
       ),
     );
   }
 
   Widget _buildTemperatureControl() {
-    return Expanded(
-      child: Center(
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Positioned(
-              left: 40,
-              child: Text(
-                '10°',
-                style: TextStyle(
-                  color: Colors.grey.shade400,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-            Positioned(
-              top: 40,
-              child: Text(
-                '20°',
-                style: TextStyle(
-                  color: Colors.grey.shade400,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-            Positioned(
-              right: 40,
-              child: Text(
-                '30°',
-                style: TextStyle(
-                  color: Colors.grey.shade400,
-                  fontSize: 14,
-                ),
-              ),
-            ),
+    return StreamBuilder<SuhuModel>(
+      stream: Homecontroller.streamDataSuhu(userId: 1),
+      builder: (context, snapshot) {
+        final suhu = snapshot.data;
 
-            // Circular progress indicator
-            Container(
-              width: 220,
-              height: 220,
-              child: AnimatedBuilder(
-                animation: _animation,
-                builder: (context, child) {
-                  return CustomPaint(
-                    painter: CircularProgressPainter(
-                      progress: _animation.value,
-                      color:
-                          isPowerOn ? Appcolor.splashColor : Appcolor.different,
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '${currentTemperature.toInt()}°',
-                            style: const TextStyle(
-                              fontSize: 60,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Row(
+        final currentTemp = suhu?.current_temperature ?? 0;
+        final progressValue = _animation.value;
+
+        return Expanded(
+          child: Center(
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  width: 180,
+                  height: 180,
+                  child: AnimatedBuilder(
+                    animation: _animation,
+                    builder: (context, child) {
+                      return CustomPaint(
+                        painter: CircularProgressPainter(
+                          progress: progressValue,
+                          color: (isProtectMode || isHeaterMode)
+                              ? Appcolor.splashColor
+                              : Appcolor.different,
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.all(15),
+                          child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
+                            children: [
                               Text(
-                                'Outside',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey,
+                                '${currentTemp.toStringAsFixed(0)}°C',
+                                style: const TextStyle(
+                                  fontSize: 50,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Poppins',
                                 ),
                               ),
-                              SizedBox(width: 4),
-                              Text(
-                                '14°',
+                              const Text(
+                                'Current Temperature',
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: 13,
                                   color: Colors.black,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-
-            // // Draggable thumb
-            // GestureDetector(
-            //   onPanUpdate: (details) {
-            //     _updateTemperatureFromGesture(details, 220);
-            //   },
-            //   child: Container(
-            //     padding: const EdgeInsets.all(25),
-            //     decoration: BoxDecoration(
-            //       shape: BoxShape.circle,
-            //       color: Colors.transparent,
-            //     ),
-            //     child: Positioned(
-            //       top: 40,
-            //       right: 80,
-            //       child: Container(
-            //         width: 22,
-            //         height: 22,
-            //         decoration: BoxDecoration(
-            //           color: Colors.white,
-            //           shape: BoxShape.circle,
-            //           boxShadow: [
-            //             BoxShadow(
-            //               color: Appcolor.splashColor.withOpacity(0.3),
-            //               blurRadius: 5,
-            //               offset: const Offset(0, 2),
-            //             ),
-            //           ],
-            //         ),
-            //         child: Center(
-            //           child: Container(
-            //             width: 8,
-            //             height: 8,
-            //             decoration: BoxDecoration(
-            //               color: Appcolor.splashColor,
-            //               shape: BoxShape.circle,
-            //             ),
-            //           ),
-            //         ),
-            //       ),
-            //     ),
-            //   ),
-            // ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
-  // void _updateTemperatureFromGesture(DragUpdateDetails details, double size) {
-  //   // Calculate the center of the circle
-  //   final RenderBox box = context.findRenderObject() as RenderBox;
-  //   final center = box.size.center(Offset.zero);
-
-  //   // Adjust by the widget's position on screen
-  //   final localPosition = box.globalToLocal(details.globalPosition);
-
-  //   // Calculate the angle
-  //   final deltaX = localPosition.dx - center.dx;
-  //   final deltaY = localPosition.dy - center.dy;
-  //   final angle = atan2(deltaY, deltaX);
-
-  //   // Convert to temperature (adjust as needed for your scale)
-  //   final newTemp = _calculateTemperatureFromAngle(angle);
-
-  //   if (newTemp >= 10 && newTemp <= 30) {
-  //     setState(() {
-  //       currentTemperature = newTemp;
-  //     });
-  //   }
-  // }
-
-  // double _calculateTemperatureFromAngle(double angle) {
-  //   // Map the angle (-π to π) to temperature range (10 to 30)
-  //   // Starting from the right (0 radians) going clockwise
-  //   // Adjust this mapping based on your dial orientation
-  //   double temp = 20 + (angle / (pi / 10));
-
-  //   // Normalize the temperature to be between 10 and 30
-  //   if (temp < 10) temp = 10;
-  //   if (temp > 30) temp = 30;
-
-  //   return double.parse(temp.toStringAsFixed(1));
+  // Widget _buildTemperatureControl() {
+  //   return Expanded(
+  //     child: Center(
+  //       child: Stack(
+  //         alignment: Alignment.center,
+  //         children: [
+  //           Container(
+  //             width: 220,
+  //             height: 220,
+  //             child: AnimatedBuilder(
+  //               animation: _animation,
+  //               builder: (context, child) {
+  //                 return CustomPaint(
+  //                   painter: CircularProgressPainter(
+  //                     progress: _animation.value,
+  //                     color: (isProtectMode || isHeaterMode)
+  //                         ? Appcolor.splashColor
+  //                         : Appcolor.different,
+  //                   ),
+  //                   child: Container(
+  //                     padding: const EdgeInsets.all(20),
+  //                     child: Column(
+  //                       mainAxisAlignment: MainAxisAlignment.center,
+  //                       children: [
+  //                         Text(
+  //                           '${currentTemperatur}°C',
+  //                           style: const TextStyle(
+  //                             fontSize: 50,
+  //                             fontWeight: FontWeight.bold,
+  //                             fontFamily: 'Poppins',
+  //                           ),
+  //                         ),
+  //                         Text(
+  //                           'Current Temperature',
+  //                           style: TextStyle(
+  //                             fontSize: 14,
+  //                             color: Colors.black,
+  //                             fontWeight: FontWeight.bold,
+  //                           ),
+  //                         ),
+  //                       ],
+  //                     ),
+  //                   ),
+  //                 );
+  //               },
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
   // }
 
   Widget _buildModeSelection() {
@@ -546,15 +734,14 @@ class _ThermostatScreenState extends State<ThermostatScreen>
         setState(() {
           selectedModeIndex = index;
         });
-        // Handle mode selection logic here
-        // For example, you can update the current temperature based on the mode
-        if (mode['name'] == 'Auto') {
-          currentTemperature = 24; // Set to default auto temperature
-        } else if (mode['name'] == 'Manual') {
-          currentTemperature = 26; // Set to manual temperature
-        } else if (mode['name'] == 'Humadity') {
+
+        if (mode['value'] == 'auto') {
+          Homecontroller.updateModePengeringan('auto');
+        } else if (mode['value'] == 'manual') {
+          Homecontroller.updateModePengeringan('manual');
+        } else if (mode['value'] == 'humidity') {
           context.go("/kadar_air");
-        } else if (mode['name'] == 'Setting') {
+        } else if (mode['value'] == 'setting') {
           context.go("/setting");
         }
       },
@@ -573,7 +760,7 @@ class _ThermostatScreenState extends State<ThermostatScreen>
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: isPowerOn
+                        color: (isProtectMode || isHeaterMode)
                             ? Appcolor.splashColor.withOpacity(0.2)
                             : Appcolor.different.withOpacity(0.2),
                         blurRadius: 8,
@@ -585,7 +772,7 @@ class _ThermostatScreenState extends State<ThermostatScreen>
             child: Icon(
               mode['icon'],
               color: isSelected
-                  ? isPowerOn
+                  ? (isProtectMode || isHeaterMode)
                       ? Appcolor.splashColor
                       : Appcolor.different
                   : Colors.grey,

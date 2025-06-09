@@ -2,16 +2,41 @@ import 'package:smart_dry/features/kadar_air/model/kadarair_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class Kadaraircontroller {
-  Future<List<KadarairModel>> fetchData() async {
-    final response = await Supabase.instance.client.from('Kadar_Air').select();
+  static final supabase = Supabase.instance.client;
+  static Future<bool> updateKadarAir(KadarairModel kadar) async {
+    try {
+      final response = await supabase.from("Kadar_Air").update({
+        "kadar_air": kadar.kadar_air,
+        "status_kadar_air": kadar.status_kadar_air,
+      }).eq("id_kadar_air", 1);
 
-    final List<KadarairModel> data =
-        (response as List).map((item) => KadarairModel.fromJson(item)).toList();
-
-    return data;
+      if (response.error == null) {
+        print('Update success: ${response.data}');
+        return true;
+      } else {
+        print('Update failed: ${response.error!.message}');
+        return false;
+      }
+    } catch (e) {
+      print('Update exception: $e');
+      return false;
+    }
   }
+  static Future<KadarairModel?> getDataKadarAir() async {
+    try {
+      final data =
+          await supabase.from("Kadar_Air").select().limit(1).maybeSingle();
 
-  void processInput(String input) {
-    // Logic to process user input
+      if (data != null) {
+        print('Data fetch success: $data');
+        return KadarairModel.fromJson(data);
+      } else {
+        print('No data found.');
+        return null;
+      }
+    } catch (e) {
+      print('Fetch error: $e');
+      return null;
+    }
   }
 }

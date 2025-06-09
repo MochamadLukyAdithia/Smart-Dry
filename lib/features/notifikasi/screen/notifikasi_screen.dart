@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:smart_dry/core/theme/AppColor.dart';
-import 'package:intl/intl.dart';
+import 'package:smart_dry/features/notifikasi/controller/notifikasi_controller.dart';
 import 'package:smart_dry/features/notifikasi/model/notifikasi_model.dart';
 
 class NotifikasiScreen extends StatefulWidget {
@@ -13,7 +13,6 @@ class NotifikasiScreen extends StatefulWidget {
 
 class _NotifikasiScreenState extends State<NotifikasiScreen> {
   bool isLoading = true;
-  List<NotificationModel> notifications = [];
 
   @override
   void initState() {
@@ -22,74 +21,10 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
   }
 
   Future<void> _fetchNotifications() async {
-    // Simulate loading from database
-    await Future.delayed(const Duration(seconds: 1));
-
-    // This would normally be a database fetch
+    await NotifikasiController.fetchNotifications();
     setState(() {
-      notifications = [
-        NotificationModel(
-          id_notifikasi: 1,
-          title: 'Suhu Tinggi Terdeteksi',
-          message:
-              'Suhu mesin pengering telah mencapai batas maksimum yang ditentukan (45°C)',
-          timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-          isRead: false,
-          type: NotificationType.warning,
-        ),
-        NotificationModel(
-          id_notifikasi: 2,
-          title: 'Proses Pengeringan Selesai',
-          message:
-              'Siklus pengeringan telah selesai. Silakan ambil pakaian Anda dari mesin.',
-          timestamp: DateTime.now().subtract(const Duration(hours: 8)),
-          isRead: true,
-          type: NotificationType.success,
-        ),
-        NotificationModel(
-          id_notifikasi: 5,
-          title: 'Koneksi Terputus',
-          message:
-              'Koneksi dengan mesin pengering terputus. Periksa koneksi WiFi Anda.',
-          timestamp: DateTime.now().subtract(const Duration(days: 3)),
-          isRead: true,
-          type: NotificationType.error,
-        ),
-        NotificationModel(
-          id_notifikasi: 6,
-          title: 'Pembaruan Aplikasi',
-          message:
-              'Versi baru aplikasi SmartDry tersedia. Perbarui sekarang untuk fitur terbaru.',
-          timestamp: DateTime.now().subtract(const Duration(days: 4)),
-          isRead: true,
-          type: NotificationType.info,
-        ),
-      ];
       isLoading = false;
     });
-  }
-
-  void _markAllAsRead() {
-    setState(() {
-      notifications = notifications.map((notification) {
-        return NotificationModel(
-          id_notifikasi: notification.id_notifikasi,
-          title: notification.title,
-          message: notification.message,
-          timestamp: notification.timestamp,
-          isRead: true,
-          type: notification.type,
-        );
-      }).toList();
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Semua notifikasi telah ditandai sebagai dibaca'),
-        backgroundColor: Appcolor.splashColor,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
   }
 
   void _clearAllNotifications() {
@@ -122,7 +57,7 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
             ),
             onPressed: () {
               setState(() {
-                notifications.clear();
+                NotifikasiController.notifications.clear();
               });
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -155,30 +90,6 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
             context.go('/home');
           },
         ),
-        actions: [
-          if (notifications.isNotEmpty)
-            PopupMenuButton<String>(
-              icon: Icon(Icons.more_vert, color: Appcolor.splashColor),
-              onSelected: (value) {
-                if (value == 'markAsRead') {
-                  _markAllAsRead();
-                } else if (value == 'clearAll') {
-                  _clearAllNotifications();
-                }
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 'markAsRead',
-                  child: Text('Tandai semua dibaca'),
-                ),
-                const PopupMenuItem(
-                  value: 'clearAll',
-                  child: Text('Hapus semua'),
-                ),
-              ],
-              color: Colors.white,
-            ),
-        ],
       ),
       body: SafeArea(
         child: Padding(
@@ -201,7 +112,7 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
                 const Center(
                   child: CircularProgressIndicator(),
                 )
-              else if (notifications.isEmpty)
+              else if (NotifikasiController.notifications.isEmpty)
                 Expanded(
                   child: Center(
                     child: Column(
@@ -228,9 +139,10 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
               else
                 Expanded(
                   child: ListView.builder(
-                    itemCount: notifications.length,
+                    itemCount: NotifikasiController.notifications.length,
                     itemBuilder: (context, index) {
-                      final notification = notifications[index];
+                      final notification =
+                          NotifikasiController.notifications[index];
                       return Dismissible(
                         key: Key(notification.id_notifikasi.toString()),
                         background: Container(
@@ -245,7 +157,7 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
                         direction: DismissDirection.endToStart,
                         onDismissed: (direction) {
                           setState(() {
-                            notifications.removeAt(index);
+                            NotifikasiController.notifications.removeAt(index);
                           });
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -277,39 +189,27 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
                               width: 50,
                               height: 50,
                               decoration: BoxDecoration(
-                                color: _getNotificationColor(notification.type)
-                                    .withOpacity(0.1),
+                                color:
+                                    NotifikasiController.getNotificationColor(
+                                            notification.type)
+                                        .withOpacity(0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
-                                _getNotificationIcon(notification.type),
-                                color: _getNotificationColor(notification.type),
+                                NotifikasiController.getNotificationIcon(
+                                    notification.type),
+                                color:
+                                    NotifikasiController.getNotificationColor(
+                                        notification.type),
                                 size: 24,
                               ),
                             ),
-                            title: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    notification.title,
-                                    style: TextStyle(
-                                      fontWeight: notification.isRead
-                                          ? FontWeight.normal
-                                          : FontWeight.bold,
-                                      color: Appcolor.splashColor,
-                                    ),
-                                  ),
-                                ),
-                                if (!notification.isRead)
-                                  Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: BoxDecoration(
-                                      color: Appcolor.splashColor,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                              ],
+                            title: Text(
+                              notification.title,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Appcolor.splashColor,
+                              ),
                             ),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -324,7 +224,8 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  _formatTimestamp(notification.timestamp),
+                                  NotifikasiController.formatTimestamp(
+                                      notification.timestamp),
                                   style: TextStyle(
                                     color: Appcolor.different.withOpacity(0.7),
                                     fontSize: 12,
@@ -333,22 +234,6 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
                               ],
                             ),
                             onTap: () {
-                              // Mark as read when tapped
-                              if (!notification.isRead) {
-                                setState(() {
-                                  final index =
-                                      notifications.indexOf(notification);
-                                  notifications[index] = NotificationModel(
-                                    id_notifikasi: notification.id_notifikasi,
-                                    title: notification.title,
-                                    message: notification.message,
-                                    timestamp: notification.timestamp,
-                                    isRead: true,
-                                    type: notification.type,
-                                  );
-                                });
-                              }
-
                               // Show notification details
                               showModalBottomSheet(
                                 context: context,
@@ -371,17 +256,20 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
                                           Container(
                                             padding: const EdgeInsets.all(8),
                                             decoration: BoxDecoration(
-                                              color: _getNotificationColor(
-                                                      notification.type)
+                                              color: NotifikasiController
+                                                      .getNotificationColor(
+                                                          notification.type)
                                                   .withOpacity(0.1),
                                               borderRadius:
                                                   BorderRadius.circular(8),
                                             ),
                                             child: Icon(
-                                              _getNotificationIcon(
-                                                  notification.type),
-                                              color: _getNotificationColor(
-                                                  notification.type),
+                                              NotifikasiController
+                                                  .getNotificationIcon(
+                                                      notification.type),
+                                              color: NotifikasiController
+                                                  .getNotificationColor(
+                                                      notification.type),
                                             ),
                                           ),
                                           const SizedBox(width: 12),
@@ -407,8 +295,9 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
                                       ),
                                       const SizedBox(height: 16),
                                       Text(
-                                        _formatDetailTimestamp(
-                                            notification.timestamp),
+                                        NotifikasiController
+                                            .formatDetailTimestamp(
+                                                notification.timestamp),
                                         style: TextStyle(
                                           fontSize: 14,
                                           color: Appcolor.different
@@ -451,54 +340,5 @@ class _NotifikasiScreenState extends State<NotifikasiScreen> {
         ),
       ),
     );
-  }
-
-  String _formatTimestamp(DateTime timestamp) {
-    final now = DateTime.now();
-    final difference = now.difference(timestamp);
-
-    if (difference.inMinutes < 1) {
-      return 'Baru saja';
-    } else if (difference.inHours < 1) {
-      return '${difference.inMinutes} menit yang lalu';
-    } else if (difference.inDays < 1) {
-      return '${difference.inHours} jam yang lalu';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays} hari yang lalu';
-    } else {
-      return DateFormat('dd MMM yyyy').format(timestamp);
-    }
-  }
-
-  String _formatDetailTimestamp(DateTime timestamp) {
-    return DateFormat('dd MMMM yyyy, HH:mm').format(timestamp);
-  }
-
-  IconData _getNotificationIcon(NotificationType type) {
-    switch (type) {
-      case NotificationType.success:
-        return Icons.check_circle;
-      case NotificationType.warning:
-        return Icons.warning_amber;
-      case NotificationType.error:
-        return Icons.error;
-      case NotificationType.info:
-      default:
-        return Icons.info;
-    }
-  }
-
-  Color _getNotificationColor(NotificationType type) {
-    switch (type) {
-      case NotificationType.success:
-        return Colors.green;
-      case NotificationType.warning:
-        return Colors.orange;
-      case NotificationType.error:
-        return Colors.red;
-      case NotificationType.info:
-      default:
-        return Appcolor.dayColor;
-    }
   }
 }
