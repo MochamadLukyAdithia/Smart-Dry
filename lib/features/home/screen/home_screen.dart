@@ -2,6 +2,7 @@ import 'package:day_night_switch/day_night_switch.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:smart_dry/common/widgets/CircularProgress.dart';
 import 'package:smart_dry/core/theme/AppColor.dart';
 import 'package:smart_dry/features/home/controller/HomeController.dart';
 import 'package:smart_dry/features/setting/controller/SettingController.dart';
@@ -436,24 +437,6 @@ class _ThermostatScreenState extends State<ThermostatScreen>
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.water_drop,
-                                color: Colors.white70,
-                                size: 18,
-                              ),
-                              const SizedBox(width: 8),
-                              const Text(
-                                "Humidity: 45%",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
                         ],
                       ),
                       Container(
@@ -791,49 +774,5 @@ class _ThermostatScreenState extends State<ThermostatScreen>
         ],
       ),
     );
-  }
-}
-
-class CircularProgressPainter extends CustomPainter {
-  final double progress;
-  final Color color;
-
-  CircularProgressPainter({
-    required this.progress,
-    required this.color,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-
-    // Background circle
-    final backgroundPaint = Paint()
-      ..color = Colors.grey.shade200
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 15;
-
-    canvas.drawCircle(center, radius, backgroundPaint);
-
-    // Progress circle
-    final progressPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 15
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      -1.5, // Start from top
-      progress, // Animated portion of the circle
-      false,
-      progressPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(CircularProgressPainter oldDelegate) {
-    return oldDelegate.progress != progress || oldDelegate.color != color;
   }
 }

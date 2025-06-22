@@ -16,6 +16,8 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
   bool isPasswordVisible = false;
 
   @override
@@ -23,6 +25,45 @@ class _LoginScreenState extends State<LoginScreen> {
     emailController.dispose();
     passwordController.dispose();
     super.dispose();
+  }
+
+  void _showAlert(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            title,
+            style: TextStyle(
+              color: Appcolor.splashColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(
+            message,
+            style: TextStyle(color: Appcolor.different),
+          ),
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Appcolor.splashColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: Appcolor.primaryColor,
+        );
+      },
+    );
   }
 
   @override
@@ -36,168 +77,179 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 20),
-              Text(
-                'Welcome Back',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Appcolor.splashColor,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Sign in to continue',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Appcolor.different,
-                ),
-              ),
-              const SizedBox(height: 50),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Appcolor.different.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: TextField(
-                  controller: emailController,
-                  keyboardType: TextInputType.text,
-                  textInputAction: TextInputAction.next,
-                  decoration: InputDecoration(
-                    labelText: 'Username',
-                    labelStyle: TextStyle(color: Appcolor.different),
-                    prefixIcon: Icon(Icons.person_2_outlined,
-                        color: Appcolor.splashColor),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 16),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Appcolor.splashColor),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.transparent),
-                    ),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
+                Text(
+                  'Welcome Back',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Appcolor.splashColor,
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Appcolor.different.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
+                const SizedBox(height: 10),
+                Text(
+                  'Sign in to continue',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Appcolor.different,
+                  ),
                 ),
-                child: TextField(
-                  controller: passwordController,
-                  obscureText: !isPasswordVisible,
-                  keyboardType: TextInputType.text,
-                  textInputAction: TextInputAction.done,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    labelStyle: TextStyle(color: Appcolor.different),
-                    prefixIcon:
-                        Icon(Icons.lock_outline, color: Appcolor.splashColor),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        isPasswordVisible
-                            ? Icons.visibility
-                            : Icons.visibility_off,
-                        color: Appcolor.different,
+                const SizedBox(height: 50),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Appcolor.different.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
                       ),
-                      onPressed: () {
-                        setState(() {
-                          isPasswordVisible = !isPasswordVisible;
-                        });
-                      },
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 16),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Appcolor.splashColor),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.transparent),
+                    ],
+                  ),
+                  child: TextFormField(
+                    controller: emailController,
+                    keyboardType: TextInputType.text,
+                    textInputAction: TextInputAction.next,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Username tidak boleh kosong';
+                      }
+                      return null;
+                    },
+                    decoration: InputDecoration(
+                      labelText: 'Username',
+                      labelStyle: TextStyle(color: Appcolor.different),
+                      prefixIcon: Icon(Icons.person_2_outlined,
+                          color: Appcolor.splashColor),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 16),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Appcolor.splashColor),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.transparent),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              SizedBox(height: MediaQuery.of(context).size.height / 20 + 12),
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    final username = emailController.text.trim();
-                    final password = passwordController.text.trim();
-                    if (username.isEmpty || password.isEmpty) {
-                      Get.snackbar("Validasi",
-                          "Username dan password tidak boleh kosong",
-                          snackPosition: SnackPosition.BOTTOM);
-                      return;
-                    }
-                    showDialog(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (_) =>
-                          const Center(child: CircularProgressIndicator()),
-                    );
-                    final success =
-                        await AuthController.login(username, password);
-                    Navigator.of(context).pop(); // Close the dialog
-
-                    if (success) {
-                      context.go('/home');
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Username or Password is incorrect'),
-                          backgroundColor: Appcolor.splashColor,
+                const SizedBox(height: 20),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Appcolor.different.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: TextFormField(
+                    controller: passwordController,
+                    obscureText: !isPasswordVisible,
+                    textInputAction: TextInputAction.done,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Password tidak boleh kosong';
+                      }
+                      return null;
+                    },
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      labelStyle: TextStyle(color: Appcolor.different),
+                      prefixIcon:
+                          Icon(Icons.lock_outline, color: Appcolor.splashColor),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          isPasswordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                          color: Appcolor.different,
                         ),
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Appcolor.splashColor,
-                    foregroundColor: Colors.white,
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Sign In',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                        onPressed: () {
+                          setState(() {
+                            isPasswordVisible = !isPasswordVisible;
+                          });
+                        },
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 16),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Appcolor.splashColor),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.transparent),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+                SizedBox(height: MediaQuery.of(context).size.height / 20 + 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final username = emailController.text.trim();
+                      final password = passwordController.text.trim();
+
+                      if (username.isEmpty || password.isEmpty) {
+                        _showAlert('Error',
+                            'Username dan password tidak boleh kosong');
+                        return;
+                      }
+
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (_) =>
+                            const Center(child: CircularProgressIndicator()),
+                      );
+
+                      final success =
+                          await AuthController.login(username, password);
+                      Navigator.of(context).pop(); // Close loading dialog
+
+                      if (success) {
+                        context.go('/home');
+                      } else {
+                        _showAlert('Error', 'Username atau Password salah');
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Appcolor.splashColor,
+                      foregroundColor: Colors.white,
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Sign In',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    );
+    );  
   }
 }

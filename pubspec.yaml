@@ -42,6 +42,8 @@ dependencies:
   device_preview: ^1.2.0
   supabase_flutter: ^2.9.0
   material_symbols_icons: ^4.2815.0
+  flutter_local_notifications: ^19.2.1
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:

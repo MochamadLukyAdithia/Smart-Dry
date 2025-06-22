@@ -11,10 +11,7 @@ Future<void> main() async {
     url: Connection.url,
     anonKey: Connection.annonKey,
   );
-  runApp(DevicePreview(
-    enabled: !kReleaseMode,
-    builder: (context) => const MyApp(),
-  ));
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {

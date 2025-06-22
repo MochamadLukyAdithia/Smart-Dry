@@ -232,25 +232,25 @@ class Homecontroller {
       return null;
     }
   }
-  static Stream<SuhuModel> streamDataSuhu({int userId = 1}) {
-  return supabase
-      .from('Suhu')
-      .stream(primaryKey: ['id_suhu']) // use your real primary key here
-      .eq('id_user', userId)
-      .order('id_suhu', ascending: false)
-      .limit(1)
-      .map((event) {
-        if (event.isNotEmpty) {
-          return SuhuModel.fromJson(event.first);
-        } else {
-          return SuhuModel(
-            id_suhu: 0,
-            id_user: userId,
-            batasan_suhu: 0,
-            current_temperature: 0,
-          );
-        }
-      });
-}
 
+  static Stream<SuhuModel> streamDataSuhu({int userId = 1}) {
+    return supabase
+        .from('Suhu')
+        .stream(primaryKey: ['id_suhu']) // use your real primary key here
+        .eq('id_user', userId)
+        .order('id_suhu', ascending: false)
+        .limit(1)
+        .map((event) {
+          if (event.isNotEmpty) {
+            return SuhuModel.fromJson(event.first);
+          } else {
+            return SuhuModel(
+              id_suhu: 0,
+              id_user: userId,
+              batasan_suhu: 0,
+              current_temperature: 0,
+            );
+          }
+        });
+  }
 }

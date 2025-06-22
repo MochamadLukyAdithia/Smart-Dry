@@ -32,6 +32,45 @@ class _SettingScreenState extends State<SettingScreen> {
     });
   }
 
+  void _showAlert(String title, String message, {bool isSuccess = true}) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            title,
+            style: TextStyle(
+              color: Appcolor.splashColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(
+            message,
+            style: TextStyle(color: Appcolor.different),
+          ),
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Appcolor.splashColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: Appcolor.primaryColor,
+        );
+      },
+    );
+  }
+
   void _logout() {
     showDialog(
       context: context,
@@ -69,21 +108,12 @@ class _SettingScreenState extends State<SettingScreen> {
               child: const Text('Log Out'),
               onPressed: () async {
                 final resp = await AuthController.logout();
+                Navigator.of(context).pop();
                 if (resp) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Logged out successfully'),
-                      backgroundColor: Appcolor.splashColor,
-                    ),
-                  );
+                  _showAlert('Success', 'Logged out successfully');
                   context.go('/login');
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Failed to log out'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+                  _showAlert('Error', 'Failed to log out', isSuccess: false);
                 }
               },
             ),
@@ -122,12 +152,7 @@ class _SettingScreenState extends State<SettingScreen> {
             tooltip: 'Refresh',
             onPressed: () async {
               await getBatasanSuhu();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Temperature limit refreshed'),
-                  backgroundColor: Appcolor.splashColor,
-                ),
-              );
+              _showAlert('Success', 'Temperature limit refreshed');
             },
           ),
           SizedBox(
@@ -197,19 +222,22 @@ class _SettingScreenState extends State<SettingScreen> {
                     ],
                   ),
                   SizedBox(height: 40),
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.symmetric(horizontal: 100, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Appcolor.splashColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '${currentTemperature.toStringAsFixed(0)}°C',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Appcolor.splashColor,
+                  Center(
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: MediaQuery.of(context).size.width / 3.2,
+                          vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Appcolor.splashColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${currentTemperature.toStringAsFixed(0)}°C',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Appcolor.splashColor,
+                        ),
                       ),
                     ),
                   ),
@@ -252,12 +280,7 @@ class _SettingScreenState extends State<SettingScreen> {
                         await SettingController.updateBatasanSuhu(
                             currentTemperature.toInt());
 
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Temperature setting saved'),
-                            backgroundColor: Appcolor.splashColor,
-                          ),
-                        );
+                        _showAlert('Success', 'Temperature setting saved');
                       },
                       child: const Text(
                         'Save Temperature Setting',
